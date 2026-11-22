@@ -1,0 +1,35 @@
+{
+  "name": "mailsift",
+  "version": "0.0.0",
+  "description": "A read-only mail reader for Node: connect, search and fetch messages as plain text.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "LICENSE", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "imapflow": "2.12.2",
+    "mailparser": "3.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "tsup": "9.0.0",
+    "typescript": "6.0.3",
+    "vitest": "5.1.1"
+  }
+}
