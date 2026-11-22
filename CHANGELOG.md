@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-22
+
 ### Added
 
 - `connect` to a mailbox over IMAP with TLS required and certificate checks on.
@@ -21,3 +23,6 @@ All notable changes to this project are documented here. The format is based on
 ### Tested live
 
 - Gmail: connect, folders, search, fetch and close pass. Other presets are untested.
+
+[Unreleased]: https://github.com/jishnupramod/mailsift/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jishnupramod/mailsift/releases/tag/v0.1.0

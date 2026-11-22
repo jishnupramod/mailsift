@@ -1,6 +1,6 @@
 {
   "name": "mailsift",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A read-only mail reader for Node: connect, search and fetch messages as plain text.",
   "keywords": [
     "imap",
