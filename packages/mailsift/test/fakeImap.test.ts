@@ -73,12 +73,23 @@ async function rawSession(port: number, lines: string[]): Promise<string> {
   let out = '';
   socket.on('data', (d) => (out += d.toString('utf8')));
   await new Promise<void>((resolve) => socket.once('connect', resolve));
+  // wait for each command's tagged reply rather than a fixed pause, so a slow
+  // machine doesn't close the socket before the last answer arrives
   for (const line of lines) {
+    const tag = line.split(' ')[0];
+    const from = out.length;
     socket.write(`${line}\r\n`);
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    const deadline = Date.now() + 5000;
+    while (!tagged(out.slice(from), tag) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
   }
   socket.destroy();
   return out;
+}
+
+function tagged(text: string, tag: string): boolean {
+  return text.startsWith(`${tag} `) || text.includes(`\r\n${tag} `);
 }
 
 describe('startFakeImap', () => {
