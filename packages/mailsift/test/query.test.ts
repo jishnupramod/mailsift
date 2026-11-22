@@ -107,11 +107,28 @@ describe('matchesLocally', () => {
   it('rejects excluded senders, ignoring case', () => {
     expect(matchesLocally({ ...q, fromDomains: ['x.example'] }, from('Me@X.example'))).toBe(false);
   });
-  it('does not apply the domain rule when a phrase may have matched elsewhere', () => {
-    expect(matchesLocally({ ...q, phrases: ['Acme'] }, from('jobs@other.example'))).toBe(true);
+  it('rejects a lookalike domain with an unrelated phrase', () => {
+    expect(matchesLocally({ ...q, phrases: ['Acme'] }, { ...from('jobs@notgreenhouse.io'), subject: 'Weekly digest' })).toBe(false);
   });
-  it('applies the domain rule when phrases only search the sender and do not match it', () => {
-    expect(matchesLocally({ ...q, phrases: ['Acme'], phraseFields: ['from'] }, from('jobs@other.example'))).toBe(false);
+  it('accepts a subject hit', () => {
+    expect(matchesLocally({ ...q, phrases: ['Acme'] }, { ...from('jobs@other.example'), subject: 'Your Acme application' })).toBe(true);
+  });
+  it('accepts a sender-name hit', () => {
+    const ref = { from: { name: 'Acme Recruiting', address: 'jobs@other.example' }, subject: 'Hello' };
+    expect(matchesLocally({ ...q, phrases: ['Acme'] }, ref)).toBe(true);
+  });
+  it('accepts an accent-folded subject hit', () => {
+    const ref = { ...from('jobs@other.example'), subject: 'Zurich Labs interview' };
+    expect(matchesLocally({ ...q, phrases: ['Zürich Labs'] }, ref)).toBe(true);
+  });
+  it('ignores the subject when phraseFields lacks it', () => {
+    const ref = { ...from('jobs@other.example'), subject: 'Acme' };
+    expect(matchesLocally({ ...q, phrases: ['Acme'], phraseFields: ['from'] }, ref)).toBe(false);
+  });
+  it('accepts everything not excluded when the body is searched', () => {
+    const body = { ...q, phrases: ['Acme'], phraseFields: ['body' as const] };
+    expect(matchesLocally(body, from('jobs@other.example'))).toBe(true);
+    expect(matchesLocally(body, from('me@x.example'))).toBe(false);
   });
   it('rejects a missing sender when domains are required', () => {
     expect(matchesLocally(q, { from: null })).toBe(false);

@@ -116,13 +116,16 @@ export function compileImap(q: Query): ImapSearch[] {
   return pack(items, (piece) => JSON.stringify(render(piece))).map(render);
 }
 
+const fold = (s: string) =>
+  s.normalize('NFD').replace(/\p{M}/gu, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
 /**
  * The checks IMAP cannot do itself, because its FROM matches substrings:
- * `excludeFrom`, and the `fromDomains` suffix rule. The domain rule is skipped
- * when a phrase could have matched through the subject or body, which are not
- * available here.
+ * `excludeFrom` always applies; when domains are given, the message must match
+ * a domain by suffix, or a phrase in the sender or subject. Bodies are not on
+ * the ref, so a query that searches the body accepts everything not excluded.
  */
-export function matchesLocally(q: Query, ref: { from: Address | null }): boolean {
+export function matchesLocally(q: Query, ref: { from: Address | null; subject?: string }): boolean {
   const address = ref.from?.address.trim().toLowerCase() ?? null;
   const excluded = (q.excludeFrom ?? []).map((a) => a.trim().toLowerCase());
   if (address !== null && excluded.includes(address)) return false;
@@ -134,7 +137,15 @@ export function matchesLocally(q: Query, ref: { from: Address | null }): boolean
   if (host !== null && domains.some((d) => host === d || host.endsWith(`.${d}`))) return true;
 
   if (phrases.length === 0) return false;
-  if (fields.includes('subject') || fields.includes('body')) return true;
-  const sender = `${ref.from?.name ?? ''} ${address ?? ''}`.toLowerCase();
-  return phrases.some((p) => sender.includes(p.toLowerCase()));
+  if (fields.includes('body')) return true;
+  const folded = phrases.map(fold);
+  if (fields.includes('from')) {
+    const sender = fold(`${ref.from?.name ?? ''} ${address ?? ''}`);
+    if (folded.some((p) => sender.includes(p))) return true;
+  }
+  if (fields.includes('subject') && ref.subject !== undefined) {
+    const subject = fold(ref.subject);
+    if (folded.some((p) => subject.includes(p))) return true;
+  }
+  return false;
 }
