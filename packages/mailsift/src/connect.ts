@@ -36,6 +36,9 @@ export interface Target {
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_LIMIT = 200;
 const DEFAULT_MAX_CHARS = 100_000;
+const MIN_SOCKET_TIMEOUT_MS = 5 * 60_000;
+/** HTML longer than this many times the text cap is cut before conversion. */
+const HTML_PER_TEXT_CHAR = 4;
 const FETCH_CHUNK = 500;
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost']);
 const HEADER_ALLOWLIST = ['Message-ID', 'Date', 'From', 'To', 'Cc', 'Reply-To', 'List-Id'];
@@ -89,7 +92,9 @@ export async function openMailbox(target: Target, auth: Auth, timeoutMs: number)
     logger: false,
     connectionTimeout: timeoutMs,
     greetingTimeout: timeoutMs,
-    socketTimeout: timeoutMs,
+    // a signed-in session with no folder open is not kept alive by IDLE, so a
+    // short quiet-socket limit would drop it between calls
+    socketTimeout: Math.max(timeoutMs, MIN_SOCKET_TIMEOUT_MS),
     // keep-alive between calls uses NOOP; never SELECT or STATUS
     missingIdleCommand: 'NOOP',
   });
@@ -278,7 +283,7 @@ async function parseMessage(ref: MessageRef, source: Buffer, internalDate: Date 
     checksumAlgo: false,
   });
   const plain = parsed.text?.trim() ? parsed.text : '';
-  const text = plain || (parsed.html ? htmlToText(parsed.html) : '');
+  const text = plain || (parsed.html ? htmlToText(parsed.html.slice(0, HTML_PER_TEXT_CHAR * maxChars)) : '');
 
   const headers: Record<string, string> = {};
   for (const name of HEADER_ALLOWLIST) {

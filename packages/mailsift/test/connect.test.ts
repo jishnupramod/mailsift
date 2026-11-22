@@ -1,6 +1,7 @@
 import net from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PROVIDERS, connect, htmlToText, type Auth, type Mailbox, type MessageRef } from '../src/index.js';
+import { PROVIDERS, connect, type Auth, type Mailbox, type MessageRef } from '../src/index.js';
+import { htmlToText } from '../src/text.js';
 import { openMailbox, resolveFolders, type Target } from '../src/connect.js';
 import { startFakeImap, type FakeFolder, type FakeImap, type FakeImapOptions, type FakeMessage } from './fakeImap.js';
 
@@ -510,6 +511,15 @@ describe('connect: connection', () => {
     });
   });
 
+  it('keeps a signed-in session with no folder open alive past timeoutMs', async () => {
+    const f = await serve([{ path: 'INBOX', uidValidity: 1, messages: [] }]);
+    mailbox = await connect({ provider: 'custom', host: '127.0.0.1', port: f.port, secure: false, auth: password, timeoutMs: 200 });
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(await mailbox.folders()).toContainEqual({ path: 'INBOX', specialUse: '\\Inbox' });
+  });
+
   it('close never throws, even twice or after the server went away', async () => {
     const f = await serve([{ path: 'INBOX', uidValidity: 1, messages: [] }]);
     const mb = await openCustom(f);
@@ -522,6 +532,23 @@ describe('connect: connection', () => {
 });
 
 describe('htmlToText', () => {
+  it.each([
+    ['unclosed style tags', '<style>x'],
+    ['unclosed script tags', '<script>x'],
+    ['unclosed comments', '<!--x'],
+    ['unclosed tags', '<p x'],
+  ])('converts 1 MB of %s in linear time without leaking their content', (_name, unit) => {
+    const html = unit.repeat(Math.ceil(1_000_000 / unit.length));
+    const started = performance.now();
+    const text = htmlToText(html);
+    expect(performance.now() - started).toBeLessThan(200);
+    expect(text).not.toContain('x');
+  });
+
+  it('keeps text around self-closed and unknown tags, and ignores lookalike close tags', () => {
+    expect(htmlToText('A<script/>B<style>s</styles>t</STYLE>C<custom-tag>D</custom-tag>')).toBe('ABCD');
+  });
+
   it('drops script and style, turns block tags into newlines and decodes entities', () => {
     const text = htmlToText(
       '<style>.a{}</style><script>var x = "<p>";</script><h1>Title</h1><p>One&nbsp;&lt;two&gt;</p><ul><li>A</li><li>B</li></ul>Tail<br>End &#233;&#x41;',
