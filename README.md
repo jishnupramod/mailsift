@@ -17,7 +17,7 @@ mailsift never changes a mailbox.
 |---|---|---|---|
 | Gmail and Google Workspace (`gmail`) | imap.gmail.com | App password | tested |
 | Outlook.com and Microsoft 365 (`outlook`) | outlook.office365.com | Microsoft sign-in: planned | untested |
-| Yahoo Mail (`yahoo`) | imap.mail.yahoo.com | App password | tested |
+| Yahoo Mail (`yahoo`) | imap.mail.yahoo.com | App password | untested |
 | iCloud Mail (`icloud`) | imap.mail.me.com | App password | untested |
 | Fastmail (`fastmail`) | imap.fastmail.com | App password | untested |
 | Any IMAP server (`custom`) | your host | App password | untested |
@@ -124,7 +124,7 @@ To report a vulnerability, see `SECURITY.md` in the repository.
 ## Running the live check
 
 The repository includes a script that runs connect, folders, search, fetch and close against a real account. It only
-reads, and it prints pass or fail, counts and folder names, never addresses or message text.
+reads, and it prints pass or fail, counts and folder types, never addresses, folder names or message text.
 
 ```sh
 pnpm --filter mailsift test:live gmail yahoo

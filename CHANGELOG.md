@@ -17,3 +17,7 @@ All notable changes to this project are documented here. The format is based on
 - Typed `MailsiftError` codes whose messages never carry credentials or message text.
 - Read-only guarantees: folders opened with `EXAMINE`, bodies fetched with `BODY.PEEK`, and no call that writes.
 - A live check script, `pnpm --filter mailsift test:live`, for trying a preset against a real account.
+
+### Tested live
+
+- Gmail: connect, folders, search and fetch pass. Other presets are untested.

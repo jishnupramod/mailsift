@@ -240,7 +240,7 @@ Partner Network id) is recommended, because some work tenants block unverified a
 - **Microsoft sign-in tests** (with the sign-in itself, in a later release) use a fake token endpoint.
 - **A live check script** (`pnpm --filter mailsift test:live <provider>`, never run in CI) runs connect, folders,
   search, fetch and close against a real account. It reads the address and app password from environment variables or
-  a hidden prompt, and prints only pass or fail, counts and folder names.
+  a hidden prompt, and prints only pass or fail, counts and folder types.
 - **MCP tests** cover tool schemas, limits and the untrusted-content wording.
 
 ### Documentation

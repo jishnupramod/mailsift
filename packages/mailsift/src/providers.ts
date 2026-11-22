@@ -69,7 +69,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, Provider>> = {
       { specialUse: '\\Junk', names: ['Bulk', 'Bulk Mail'] },
     ],
     appPasswordUrl: 'https://login.yahoo.com/account/security/app-passwords',
-    tested: true,
+    tested: false,
   },
   icloud: {
     id: 'icloud',

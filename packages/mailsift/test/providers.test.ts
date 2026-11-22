@@ -41,7 +41,7 @@ describe('PROVIDERS', () => {
     }
   });
 
-  it('marks only gmail and yahoo as tested', () => {
-    expect(all.filter((p) => p.tested).map((p) => p.id).sort()).toEqual(['gmail', 'yahoo']);
+  it('marks only gmail as tested', () => {
+    expect(all.filter((p) => p.tested).map((p) => p.id).sort()).toEqual(['gmail']);
   });
 });
