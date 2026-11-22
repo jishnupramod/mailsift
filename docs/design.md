@@ -19,7 +19,8 @@ A focused, read-only, multi-provider reader is useful for:
 - **One API for every provider:** connect, search, fetch as plain text, close.
 - **Sign-in per provider:**
   - an app password over IMAP for Gmail, Yahoo, iCloud, Fastmail and custom IMAP;
-  - Microsoft sign-in (OAuth 2.0) over IMAP for Outlook.com and Microsoft 365.
+  - Microsoft sign-in (OAuth 2.0) over IMAP for Outlook.com and Microsoft 365 (planned for a later release; 0.1.0
+    accepts a Microsoft access token the caller obtains, and has no sign-in functions).
 - **Provider presets:** host, port, TLS, sign-in kind, which folders to search, search dialect, and a link to the
   provider's app-password page.
 - **A portable search query:** "from any of these domains, or containing any of these phrases, since this date". It is
@@ -61,8 +62,8 @@ A focused, read-only, multi-provider reader is useful for:
 - A pnpm workspace with two packages, `mailsift` (the library) and `mailsift-mcp`.
 - **Licence:** MIT.
 - **Versions:** semver, with a changelog.
-  - `0.1.0` is the library alone.
-  - `0.2.0` adds `mailsift-mcp`.
+  - `0.1.0` is the library alone, for the app-password providers. Microsoft sign-in is not in it.
+  - A later release adds Microsoft sign-in, and `mailsift-mcp` follows.
   - A preset that hasn't been tried on a live account is marked "untested" in the provider table.
 - **CI:** GitHub Actions (lint, type check, tests) on pull requests and on main.
 - **Publishing:** to npm with provenance, from a tagged release.
@@ -71,8 +72,9 @@ A focused, read-only, multi-provider reader is useful for:
 
 - **`imapflow`** for IMAP. It is pure JS, actively maintained, and supports XOAUTH2, `EXAMINE` and `BODY.PEEK`.
 - **`mailparser`** for MIME parsing. It is pure JS.
-- **Microsoft sign-in uses plain `fetch`** against the Microsoft identity platform: authorization code with PKCE and a
-  loopback redirect, plus device code as a fallback. This avoids the larger MSAL package.
+- **Microsoft sign-in (planned, not in 0.1.0) uses plain `fetch`** against the Microsoft identity platform:
+  authorization code with PKCE and a loopback redirect, plus device code as a fallback. This avoids the larger MSAL
+  package.
 - Nothing native.
 - Runtime: Node 20 or later.
 
@@ -144,7 +146,7 @@ interface Mailbox {
   close(): Promise<void>;
 }
 
-// Microsoft sign-in (the caller stores the tokens)
+// Microsoft sign-in (planned for a later release; these functions do not exist in 0.1.0). The caller stores the tokens.
 // Two-step form, for callers that own the redirect route:
 function microsoftStartSignIn(opts: { clientId: string; redirectUri: string; tenant?: 'common' | string }):
   { url: string; state: string; verifier: string };
@@ -210,7 +212,9 @@ Messages never include credentials or message text.
 - **Microsoft client id:** mailsift ships a default Microsoft app registration (public client, no secret). Callers may
   pass their own `clientId`.
 
-### Microsoft sign-in
+### Microsoft sign-in (planned for a later release)
+
+Not in 0.1.0. Until then, a caller can pass its own Microsoft access token to `connect`.
 
 Outlook support uses IMAP with XOAUTH2; Microsoft Graph is a possible fallback. The flow uses authorization code with
 PKCE and a loopback redirect, with the scopes `https://outlook.office.com/IMAP.AccessAsUser.All offline_access` on the
@@ -233,14 +237,15 @@ Partner Network id) is recommended, because some work tenants block unverified a
 - **Connection tests** cover connect, search, fetch, read-only behaviour (no `\Seen` change) and errors. They run
   against an in-process fake IMAP server or recorded sessions. They exercise `EXAMINE`,
   `BODY.PEEK`, `X-GM-RAW` and XOAUTH2.
-- **Microsoft sign-in tests** use a fake token endpoint.
-- **A live test script** (`pnpm test:live`, never run in CI) runs each preset against real accounts from environment
-  variables.
+- **Microsoft sign-in tests** (with the sign-in itself, in a later release) use a fake token endpoint.
+- **A live check script** (`pnpm --filter mailsift test:live <provider>`, never run in CI) runs connect, folders,
+  search, fetch and close against a real account. It reads the address and app password from environment variables or
+  a hidden prompt, and prints only pass or fail, counts and folder names.
 - **MCP tests** cover tool schemas, limits and the untrusted-content wording.
 
 ### Documentation
 
 - **README:** what it is, the read-only promise, the provider table, how to make an app password per provider (with
   links), the library quick start, MCP setup for Claude Desktop and Claude Code, and the security model.
-- **`SECURITY.md`** with a reporting address.
+- **`SECURITY.md`** pointing to GitHub's private security advisories.
 - **`CONTRIBUTING.md`:** how to add a provider preset.

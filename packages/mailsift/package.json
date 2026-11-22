@@ -2,6 +2,25 @@
   "name": "mailsift",
   "version": "0.0.0",
   "description": "A read-only mail reader for Node: connect, search and fetch messages as plain text.",
+  "keywords": [
+    "imap",
+    "email",
+    "mail",
+    "gmail",
+    "yahoo",
+    "read-only",
+    "search",
+    "mailbox"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jishnupramod/mailsift.git",
+    "directory": "packages/mailsift"
+  },
+  "homepage": "https://github.com/jishnupramod/mailsift#readme",
+  "bugs": {
+    "url": "https://github.com/jishnupramod/mailsift/issues"
+  },
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +38,7 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "test:live": "vitest run --config vitest.live.config.ts",
+    "test:live": "pnpm build && node scripts/live.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
