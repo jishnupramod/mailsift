@@ -76,7 +76,7 @@ A focused, read-only, multi-provider reader is useful for:
   authorization code with PKCE and a loopback redirect, plus device code as a fallback. This avoids the larger MSAL
   package.
 - Nothing native.
-- Runtime: Node 20 or later.
+- Runtime: Node 22 or later.
 
 ### Provider presets
 

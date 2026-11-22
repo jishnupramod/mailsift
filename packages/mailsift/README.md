@@ -81,7 +81,7 @@ const auth = { kind: 'password', user: 'someone@example.com', password: process.
 const mailbox = await connect({ provider: 'custom', host: 'imap.example.com', port: 993, auth });
 ```
 
-mailsift is ESM only (`import`, no `require`) and needs Node 20 or later.
+mailsift is ESM only (`import`, no `require`) and needs Node 22 or later.
 
 ## Query reference
 
