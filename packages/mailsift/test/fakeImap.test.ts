@@ -76,7 +76,7 @@ async function rawSession(port: number, lines: string[]): Promise<string> {
   // wait for each command's tagged reply rather than a fixed pause, so a slow
   // machine doesn't close the socket before the last answer arrives
   for (const line of lines) {
-    const tag = line.split(' ')[0];
+    const tag = line.split(' ')[0] ?? '';
     const from = out.length;
     socket.write(`${line}\r\n`);
     const deadline = Date.now() + 5000;
