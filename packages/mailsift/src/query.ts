@@ -74,7 +74,8 @@ export function compileGmail(q: Query, ownExclusions = true): string[] {
   if (ownExclusions) tailParts.push('-in:sent', '-in:drafts');
   if (q.since) {
     const [y, m, d] = utcDay(q.since);
-    tailParts.push(`after:${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`);
+    // Gmail reads a bare date in the account's own time zone; seconds are exact and exclusive.
+    tailParts.push(`after:${Math.floor(Date.UTC(y, m - 1, d) / 1000) - 1}`);
   }
   const tail = tailParts.length > 0 ? ` ${tailParts.join(' ')}` : '';
 

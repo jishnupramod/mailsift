@@ -410,6 +410,11 @@ function gmailPredicate(q: string, env: SearchEnv): Pred {
         return false;
       }
       case 'after': case 'before': {
+        if (/^\d+$/.test(value)) {
+          // Unix seconds: exact and exclusive, like Gmail.
+          const secs = Number(value);
+          return field === 'after' ? m.date.getTime() / 1000 > secs : m.date.getTime() / 1000 < secs;
+        }
         const [y, mo, d] = value.split('/').map(Number);
         if (!y || !mo || !d) throw new BadCommand('Invalid date in X-GM-RAW');
         const at = Date.UTC(y, mo - 1, d);

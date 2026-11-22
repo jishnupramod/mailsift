@@ -18,7 +18,7 @@ describe('compileGmail', () => {
     expect(
       compileGmail({ fromDomains: ['greenhouse.io'], phrases: ['Acme'], excludeFrom: ['me@x.example'], since }),
     ).toEqual([
-      '(from:(greenhouse.io) OR from:"Acme" OR subject:"Acme") -from:me@x.example -in:sent -in:drafts after:2026/09/01',
+      '(from:(greenhouse.io) OR from:"Acme" OR subject:"Acme") -from:me@x.example -in:sent -in:drafts after:1788220799',
     ]);
   });
 
@@ -49,7 +49,7 @@ describe('compileGmail', () => {
   it('splits 150 phrases into pieces under 1,400 characters with the same tail', () => {
     const phrases = Array.from({ length: 150 }, (_, i) => `Company Number ${String(i).padStart(3, '0')} Limited`);
     const pieces = compileGmail({ fromDomains: ['greenhouse.io'], phrases, excludeFrom: ['me@x.example'], since });
-    const tail = ' -from:me@x.example -in:sent -in:drafts after:2026/09/01';
+    const tail = ' -from:me@x.example -in:sent -in:drafts after:1788220799';
     expect(pieces.length).toBeGreaterThan(1);
     for (const p of pieces) {
       expect(p.length).toBeLessThan(1400);
