@@ -26,10 +26,26 @@ describe('toMailsiftError', () => {
     expect(toMailsiftError({ responseText: 'Access token has expired' }).code).toBe('TOKEN_EXPIRED');
   });
 
-  it('falls back to CONNECTION_FAILED', () => {
-    expect(toMailsiftError(Object.assign(new Error('x'), { code: 'ECONNREFUSED' })).code).toBe('CONNECTION_FAILED');
-    expect(toMailsiftError('weird').code).toBe('CONNECTION_FAILED');
-    expect(toMailsiftError(null).code).toBe('CONNECTION_FAILED');
+  it.each(['ETIMEOUT', 'CONNECT_TIMEOUT', 'GREETING_TIMEOUT', 'UPGRADE_TIMEOUT', 'ESOCKETTIMEDOUT'])(
+    'maps %s to TIMEOUT',
+    (code) => {
+      expect(toMailsiftError(Object.assign(new Error('x'), { code })).code).toBe('TIMEOUT');
+    },
+  );
+
+  it.each(['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE'])(
+    'maps %s to CONNECTION_FAILED',
+    (code) => {
+      expect(toMailsiftError(Object.assign(new Error('x'), { code })).code).toBe('CONNECTION_FAILED');
+    },
+  );
+
+  it('reports unrecognised errors as PROTOCOL_ERROR', () => {
+    expect(toMailsiftError(new TypeError('x is not a function')).code).toBe('PROTOCOL_ERROR');
+    expect(toMailsiftError({ responseStatus: 'BAD', responseText: 'whatever' }).code).toBe('PROTOCOL_ERROR');
+    expect(toMailsiftError('weird').code).toBe('PROTOCOL_ERROR');
+    expect(toMailsiftError(null).code).toBe('PROTOCOL_ERROR');
+    expect(toMailsiftError(new TypeError('x')).message).toBe('The mail server returned an unexpected response.');
   });
 
   it('never leaks a password, server text or the original error', () => {

@@ -182,6 +182,7 @@ interface MicrosoftTokens { accessToken: string; refreshToken: string; expiresAt
 - `FOLDER_MISSING`
 - `RATE_LIMITED`
 - `TOKEN_EXPIRED`
+- `PROTOCOL_ERROR` (anything else: an unexpected server response or an unrecognised failure)
 
 Messages never include credentials or message text.
 

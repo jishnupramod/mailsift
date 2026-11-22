@@ -6,7 +6,8 @@ export type ErrorCode =
   | 'TIMEOUT'
   | 'FOLDER_MISSING'
   | 'RATE_LIMITED'
-  | 'TOKEN_EXPIRED';
+  | 'TOKEN_EXPIRED'
+  | 'PROTOCOL_ERROR';
 
 const MESSAGES: Record<ErrorCode, string> = {
   AUTH_FAILED: 'The mail server rejected the sign-in.',
@@ -17,6 +18,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   FOLDER_MISSING: 'The mail folder was not found.',
   RATE_LIMITED: 'The mail server is limiting requests; try again later.',
   TOKEN_EXPIRED: 'The sign-in token has expired.',
+  PROTOCOL_ERROR: 'The mail server returned an unexpected response.',
 };
 
 /** Error with a fixed message per code. Never carries server text, credentials or a cause. */
@@ -30,7 +32,25 @@ export class MailsiftError extends Error {
   }
 }
 
-const TIMEOUT_CODES = new Set(['ETIMEDOUT', 'ESOCKETTIMEDOUT', 'TimeoutError']);
+const TIMEOUT_CODES = new Set([
+  'ETIMEDOUT',
+  'ESOCKETTIMEDOUT',
+  'TimeoutError',
+  // imapflow: socket, connect, greeting and TLS-upgrade timeouts
+  'ETIMEOUT',
+  'CONNECT_TIMEOUT',
+  'GREETING_TIMEOUT',
+  'UPGRADE_TIMEOUT',
+])
+const NETWORK_CODES = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'ECONNRESET',
+  'EAI_AGAIN',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPIPE',
+]);
 const TLS_CODES = new Set([
   'CERT_HAS_EXPIRED',
   'CERT_NOT_YET_VALID',
@@ -81,5 +101,6 @@ export function toMailsiftError(e: unknown): MailsiftError {
   ) {
     return new MailsiftError('RATE_LIMITED');
   }
-  return new MailsiftError('CONNECTION_FAILED');
+  if (NETWORK_CODES.has(code)) return new MailsiftError('CONNECTION_FAILED');
+  return new MailsiftError('PROTOCOL_ERROR');
 }
