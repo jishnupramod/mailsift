@@ -41,6 +41,8 @@ const TIMEOUT_CODES = new Set([
   'CONNECT_TIMEOUT',
   'GREETING_TIMEOUT',
   'UPGRADE_TIMEOUT',
+  // imapflow: waiting for a mailbox lock took too long
+  'LockTimeout',
 ])
 const NETWORK_CODES = new Set([
   'ECONNREFUSED',
@@ -104,6 +106,7 @@ export function toMailsiftError(e: unknown): MailsiftError {
     return new MailsiftError('FOLDER_MISSING');
   }
   if (
+    code === 'ETHROTTLE' ||
     serverCode === 'LIMIT' ||
     serverCode === 'THROTTLED' ||
     /too many (simultaneous )?connections|rate limit|throttl/.test(responseText)

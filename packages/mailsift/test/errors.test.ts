@@ -47,6 +47,14 @@ describe('toMailsiftError', () => {
     },
   );
 
+  it("maps imapflow's ETHROTTLE to RATE_LIMITED", () => {
+    expect(toMailsiftError(Object.assign(new Error('x'), { code: 'ETHROTTLE' })).code).toBe('RATE_LIMITED');
+  });
+
+  it("maps imapflow's LockTimeout to TIMEOUT", () => {
+    expect(toMailsiftError(Object.assign(new Error('x'), { code: 'LockTimeout' })).code).toBe('TIMEOUT');
+  });
+
   it('keeps EPROTO, which Node raises for failed TLS handshakes, as TLS_FAILED', () => {
     expect(toMailsiftError(Object.assign(new Error('x'), { code: 'EPROTO' })).code).toBe('TLS_FAILED');
   });
