@@ -284,6 +284,19 @@ describe('connect: read-only', () => {
 
     expect(await mb.search({ fromDomains: ['acme.example'] })).toHaveLength(200);
   });
+
+  it('treats a negative limit as the default and a zero limit as no results', async () => {
+    const messages = Array.from({ length: 250 }, (_, i) => ({
+      uid: i + 1,
+      raw: mail({ from: 'Ana <ana@acme.example>', subject: `Hit ${i}` }),
+      date: new Date(Date.UTC(2026, 0, 1) + i * 60_000),
+    }));
+    const f = await serve([{ path: 'INBOX', uidValidity: 1, messages }]);
+    const mb = await openCustom(f);
+
+    expect(await mb.search({ fromDomains: ['acme.example'] }, { limit: -5 })).toHaveLength(200);
+    expect(await mb.search({ fromDomains: ['acme.example'] }, { limit: 0 })).toEqual([]);
+  });
 });
 
 describe('connect: local checks', () => {
@@ -357,6 +370,11 @@ describe('connect: fetch', () => {
     await mailbox?.close();
     await fake?.close();
     expect((await fetchOnly(raw, { maxChars: 10 })).text).toBe('aaaaaaaaaa');
+  });
+
+  it('falls back to the default cap for a negative maxChars', async () => {
+    const raw = mail({ from: 'Ana <ana@acme.example>', subject: 'Long', body: 'a'.repeat(150_000) });
+    expect((await fetchOnly(raw, { maxChars: -1 })).text).toHaveLength(100_000);
   });
 
   it('keeps only allowlisted headers and returns the ref fields', async () => {

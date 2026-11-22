@@ -36,6 +36,11 @@ export interface Target {
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_LIMIT = 200;
 const DEFAULT_MAX_CHARS = 100_000;
+
+/** A whole number of at least 0; anything non-finite or negative falls back. */
+function clampCount(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
+}
 const MIN_SOCKET_TIMEOUT_MS = 5 * 60_000;
 /** HTML longer than this many times the text cap is cut before conversion. */
 const HTML_PER_TEXT_CHAR = 4;
@@ -139,7 +144,7 @@ class ImapMailbox implements Mailbox {
           if (!byKey.has(ref.key)) byKey.set(ref.key, ref);
         }
       }
-      return [...byKey.values()].sort(newestFirst).slice(0, opts.limit ?? DEFAULT_LIMIT);
+      return [...byKey.values()].sort(newestFirst).slice(0, clampCount(opts.limit, DEFAULT_LIMIT));
     });
   }
 
@@ -181,7 +186,7 @@ class ImapMailbox implements Mailbox {
       } finally {
         lock.release();
       }
-      return parseMessage(ref, source, internalDate, opts.maxChars ?? DEFAULT_MAX_CHARS);
+      return parseMessage(ref, source, internalDate, clampCount(opts.maxChars, DEFAULT_MAX_CHARS));
     });
   }
 
