@@ -66,6 +66,23 @@ try {
 
 `mailbox.folders()` lists the folders on the server.
 
+## Connect options
+
+| Option | Meaning |
+|---|---|
+| `provider` | `'gmail'`, `'outlook'`, `'yahoo'`, `'icloud'`, `'fastmail'` or `'custom'`. |
+| `auth` | `{ kind: 'password', user, password }`, or `{ kind: 'microsoft', user, accessToken }`. |
+| `host`, `port`, `secure` | `custom` only. `secure: false` is allowed only for `localhost` or `127.0.0.1`. |
+| `folders` | Folder paths to search. Overrides the preset's folders. |
+| `timeoutMs` | Time to wait for the server. Default 30 000. |
+
+```js
+const auth = { kind: 'password', user: 'someone@example.com', password: process.env.MAIL_APP_PASSWORD };
+const mailbox = await connect({ provider: 'custom', host: 'imap.example.com', port: 993, auth });
+```
+
+mailsift is ESM only (`import`, no `require`) and needs Node 20 or later.
+
 ## Query reference
 
 | Field | Meaning |
@@ -105,6 +122,9 @@ message text.
 | `RATE_LIMITED` | The server is limiting requests; try again later. |
 | `TOKEN_EXPIRED` | The sign-in token has expired. |
 | `PROTOCOL_ERROR` | An unexpected server response or an unrecognised failure. |
+
+Programming errors (an unknown provider, a custom provider without a host) throw `TypeError`; an error from your own
+`accessToken` function passes through unchanged.
 
 ## Security model
 

@@ -65,8 +65,8 @@ A focused, read-only, multi-provider reader is useful for:
   - `0.1.0` is the library alone, for the app-password providers. Microsoft sign-in is not in it.
   - A later release adds Microsoft sign-in, and `mailsift-mcp` follows.
   - A preset that hasn't been tried on a live account is marked "untested" in the provider table.
-- **CI:** GitHub Actions (lint, type check, tests) on pull requests and on main.
-- **Publishing:** to npm with provenance, from a tagged release.
+- **CI:** GitHub Actions (type check, tests, build) on pull requests and on main.
+- **Publishing:** published to npm from a tagged release.
 
 ### Dependencies
 
@@ -84,7 +84,7 @@ A focused, read-only, multi-provider reader is useful for:
 - **IMAP connection:** host, port and TLS.
 - **Sign-in kind:** `password` or `microsoft`.
 - **Search dialect:** `gmail` (sent with `X-GM-RAW`) or `imap`.
-- **Folders to search:** chosen by special-use flag (`\Inbox`, `\All`, `\Junk`), with name fallbacks.
+- **Folders to search:** chosen by special-use flag (`\Inbox`, `\All`, `\Junk`, `\Archive`), with name fallbacks.
 - **Help:** for password providers, a help URL for making an app password.
 - **`custom`:** takes any host, port and TLS.
 
@@ -99,7 +99,7 @@ The provider list:
 | `fastmail` | Fastmail | password | imap | Inbox + Archive + Spam |
 | `custom` | Any IMAP server | password | imap | Inbox + Junk, or as given |
 
-Each preset's host and folder names are checked against the provider's documentation and a live account.
+Each preset's host and folder names are checked against the provider's documentation; the `tested` flag records which presets have passed the live check.
 
 ### Library API
 

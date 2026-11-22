@@ -20,4 +20,4 @@ All notable changes to this project are documented here. The format is based on
 
 ### Tested live
 
-- Gmail: connect, folders, search and fetch pass. Other presets are untested.
+- Gmail: connect, folders, search, fetch and close pass. Other presets are untested.
