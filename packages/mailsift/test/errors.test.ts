@@ -40,6 +40,17 @@ describe('toMailsiftError', () => {
     },
   );
 
+  it.each(['NoConnection', 'EConnectionClosed', 'StateLogout', 'ClosedAfterConnectText', 'ClosedAfterConnectTLS', 'ECONNABORTED', 'ENETDOWN'])(
+    'maps a dropped or closed connection (%s) to CONNECTION_FAILED',
+    (code) => {
+      expect(toMailsiftError(Object.assign(new Error('Connection not available'), { code })).code).toBe('CONNECTION_FAILED');
+    },
+  );
+
+  it('keeps EPROTO, which Node raises for failed TLS handshakes, as TLS_FAILED', () => {
+    expect(toMailsiftError(Object.assign(new Error('x'), { code: 'EPROTO' })).code).toBe('TLS_FAILED');
+  });
+
   it('reports unrecognised errors as PROTOCOL_ERROR', () => {
     expect(toMailsiftError(new TypeError('x is not a function')).code).toBe('PROTOCOL_ERROR');
     expect(toMailsiftError({ responseStatus: 'BAD', responseText: 'whatever' }).code).toBe('PROTOCOL_ERROR');

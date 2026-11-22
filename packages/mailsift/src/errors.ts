@@ -50,6 +50,14 @@ const NETWORK_CODES = new Set([
   'EHOSTUNREACH',
   'ENETUNREACH',
   'EPIPE',
+  'ECONNABORTED',
+  'ENETDOWN',
+  // imapflow: the connection dropped or was closed before the command finished
+  'NoConnection',
+  'EConnectionClosed',
+  'StateLogout',
+  'ClosedAfterConnectText',
+  'ClosedAfterConnectTLS',
 ]);
 const TLS_CODES = new Set([
   'CERT_HAS_EXPIRED',
@@ -61,6 +69,7 @@ const TLS_CODES = new Set([
   'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
   'ERR_TLS_CERT_ALTNAME_INVALID',
   'HOSTNAME_MISMATCH',
+  // Node raises EPROTO when the TLS handshake fails
   'EPROTO',
 ]);
 
