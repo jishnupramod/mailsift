@@ -58,10 +58,3 @@ export interface Message extends MessageRef {
   attachments: { filename: string | null; contentType: string; size: number }[];
   sizeBytes: number;
 }
-
-export interface MicrosoftTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: Date;
-  account: string;
-}
