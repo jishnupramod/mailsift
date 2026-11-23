@@ -131,9 +131,14 @@ class ImapMailbox implements Mailbox {
   }
 
   search(q: Query, opts: { limit?: number } = {}): Promise<MessageRef[]> {
+    // compiled outside mapErrors: a query mistake is the caller's TypeError, not a mail error
+    let searches: ImapSearch[];
+    try {
+      searches = this.target.dialect === 'gmail' ? compileGmail(q).map((gmraw) => ({ gmraw })) : compileImap(q);
+    } catch (e) {
+      return Promise.reject(e);
+    }
     return mapErrors(async () => {
-      const searches: ImapSearch[] =
-        this.target.dialect === 'gmail' ? compileGmail(q).map((gmraw) => ({ gmraw })) : compileImap(q);
       if (searches.length === 0) return [];
       const paths = resolveFolders(await this.folders(), this.target.folders);
       if (paths.length === 0) throw new MailsiftError('FOLDER_MISSING');

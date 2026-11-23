@@ -5,6 +5,8 @@ import type { Address, Query } from './types.js';
 export type ImapSearch = SearchObject;
 
 const MAX_PIECE = 1400;
+/** The longest requireAny word list, joined with " OR ": under half a piece. */
+const MAX_WORDS = 600;
 const DEFAULT_FIELDS: NonNullable<Query['phraseFields']> = ['from', 'subject'];
 type WordField = 'from' | 'subject';
 const DEFAULT_WORD_FIELDS: WordField[] = ['subject'];
@@ -30,6 +32,10 @@ function prepare(q: Query) {
   const phrases = (q.phrases ?? []).map(cleanPhrase).filter((p): p is string => p !== null);
   const fields = q.phraseFields && q.phraseFields.length > 0 ? q.phraseFields : DEFAULT_FIELDS;
   const words = (q.requireAny?.words ?? []).map(cleanPhrase).filter((w): w is string => w !== null);
+  // the group repeats in every piece of a search, so it must leave room for the rest
+  if (words.join(' OR ').length > MAX_WORDS) {
+    throw new TypeError(`requireAny words must fit in ${MAX_WORDS} characters when joined with " OR "`);
+  }
   const given = (['from', 'subject'] as const).filter((f) => q.requireAny?.fields?.includes(f));
   const wordFields: WordField[] = given.length > 0 ? given : DEFAULT_WORD_FIELDS;
   return { domains, phrases, fields, words, wordFields };
@@ -85,8 +91,8 @@ export function compileGmail(q: Query, ownExclusions = true): string[] {
   }
   const tail = tailParts.length > 0 ? ` ${tailParts.join(' ')}` : '';
 
-  // a single word goes bare; anything else (a space, punctuation) is quoted as a phrase
-  const wordList = words.map((w) => (/^[\p{L}\p{N}]+$/u.test(w) ? w : `"${w}"`)).join(' OR ');
+  // a single word goes bare; anything else (a space, punctuation, or a word Gmail reads as OR/AND) is quoted
+  const wordList = words.map((w) => (/^[\p{L}\p{N}]+$/u.test(w) && !/^(or|and)$/i.test(w) ? w : `"${w}"`)).join(' OR ');
   const wordTerms = wordFields.map((f) => `${f}:(${wordList})`);
   const group = words.length === 0 ? '' : wordTerms.length === 1 ? ` ${wordTerms[0]}` : ` (${wordTerms.join(' OR ')})`;
 

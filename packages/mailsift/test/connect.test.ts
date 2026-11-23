@@ -141,6 +141,14 @@ describe('connect: Gmail-style', () => {
     expect(folders).toContainEqual({ path: '[Gmail]/Spam', specialUse: '\\Junk' });
   });
 
+  it('rejects required words too long for one search with a TypeError, not a mail error', async () => {
+    const f = await serve([{ path: 'INBOX', uidValidity: 1, messages: [] }], { gmail: true });
+    const mb = await open('gmail', f);
+    const words = Array.from({ length: 80 }, (_, i) => `word${String(i).padStart(6, '0')}`);
+
+    await expect(mb.search({ phrases: ['Acme'], requireAny: { words } })).rejects.toBeInstanceOf(TypeError);
+  });
+
   it('raises FOLDER_MISSING when no preset folder resolves', async () => {
     const f = await serve([{ path: 'INBOX', uidValidity: 1, messages: [] }], { gmail: true });
     const mb = await open('gmail', f);

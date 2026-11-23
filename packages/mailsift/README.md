@@ -131,8 +131,9 @@ message text.
 | `TOKEN_EXPIRED` | The sign-in token has expired. |
 | `PROTOCOL_ERROR` | An unexpected server response or an unrecognised failure. |
 
-Programming errors (an unknown provider, a custom provider without a host) throw `TypeError`; an error from your own
-`accessToken` function passes through unchanged.
+Programming errors (an unknown provider, a custom provider without a host, `requireAny` words longer than 600
+characters joined with ` OR `) throw `TypeError`. An error from your own `accessToken` function passes through
+unchanged.
 
 ## Security model
 

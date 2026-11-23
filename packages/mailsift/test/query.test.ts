@@ -14,6 +14,18 @@ describe('cleanPhrase', () => {
 });
 
 describe('compileGmail', () => {
+  it('quotes a required word that Gmail would read as an operator', () => {
+    const [q] = compileGmail({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words: ['OR', 'and', 'offer'] } });
+    expect(q).toContain('subject:("OR" OR "and" OR offer)');
+  });
+
+  it('refuses required words too long for one search', () => {
+    const words = Array.from({ length: 80 }, (_, i) => `word${String(i).padStart(6, '0')}`);
+    expect(() => compileGmail({ phrases: ['Acme'], requireAny: { words } })).toThrow(TypeError);
+    expect(() => compileImap({ phrases: ['Acme'], requireAny: { words } })).toThrow(TypeError);
+    expect(() => compileGmail({ phrases: ['Acme'], requireAny: { words: words.slice(0, 20) } })).not.toThrow();
+  });
+
   it('builds one search with domains, phrases, exclusions and date', () => {
     expect(
       compileGmail({ fromDomains: ['greenhouse.io'], phrases: ['Acme'], excludeFrom: ['me@x.example'], since }),
