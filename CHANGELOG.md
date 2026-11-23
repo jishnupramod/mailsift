@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `requireAny` on a query: a search matches only mail that also has one of these words, as a whole word, in the
+  subject or the sender.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

@@ -1,7 +1,7 @@
 import net from 'node:net';
 import { ImapFlow } from 'imapflow';
 import { afterEach, describe, expect, it } from 'vitest';
-import { compileGmail } from '../src/query.js';
+import { compileGmail, compileImap } from '../src/query.js';
 import { startFakeImap, type FakeFolder, type FakeImap } from './fakeImap.js';
 
 const raw = (subject: string, from = 'Ana Silva <ana@jobs.example>', body = 'Hello there.') =>
@@ -213,6 +213,49 @@ describe('startFakeImap', () => {
       lock.release();
     }
     expect(fake.commands.some((c) => c.includes('X-GM-RAW'))).toBe(true);
+  });
+
+  it('ands a required word group onto each IMAP piece, including one that is an or tree', async () => {
+    const box: FakeFolder[] = [
+      {
+        path: 'INBOX',
+        uidValidity: 7,
+        messages: [
+          { uid: 1, raw: raw('Your application to Acme'), date: new Date('2026-07-01T08:00:00Z') },
+          { uid: 2, raw: raw('Acme newsletter'), date: new Date('2026-09-10T08:00:00Z') },
+          { uid: 3, raw: raw('Your application to Acme'), date: new Date('2026-09-11T08:00:00Z') },
+          { uid: 4, raw: raw('Globex interview invite'), date: new Date('2026-09-12T08:00:00Z') },
+          { uid: 5, raw: raw('Globex digest'), date: new Date('2026-09-13T08:00:00Z') },
+        ],
+      },
+    ];
+    fake = await startFakeImap({ folders: box, auth });
+    client = new ImapFlow({ host: '127.0.0.1', port: fake.port, secure: false, auth: { user: auth.user, pass: auth.password }, logger: false });
+    await client.connect();
+    const since = new Date('2026-09-01T00:00:00Z');
+    const lock = await client.getMailboxLock('INBOX', { readOnly: true });
+    try {
+      const one = compileImap({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words: ['application'] }, since });
+      expect(one).toHaveLength(1);
+      expect(await client.search(one[0]!, { uid: true })).toEqual([3]);
+
+      const tree = compileImap({
+        phrases: ['Acme', 'Globex'],
+        phraseFields: ['subject'],
+        requireAny: { words: ['application', 'interview'] },
+        since,
+      });
+      expect(tree).toHaveLength(1);
+      expect(await client.search(tree[0]!, { uid: true })).toEqual([3, 4]);
+    } finally {
+      lock.release();
+    }
+    const searches = fake.commands.filter((c) => /UID SEARCH/.test(c));
+    expect(searches).toHaveLength(2);
+    expect(searches[0]).toMatch(/UID SEARCH SUBJECT Acme SINCE 01-Sep-2026 NOT NOT SUBJECT application$/);
+    expect(searches[1]).toMatch(
+      /UID SEARCH OR SUBJECT Acme SUBJECT Globex SINCE 01-Sep-2026 NOT NOT OR SUBJECT application SUBJECT interview$/,
+    );
   });
 
   it('does not advertise X-GM-EXT-1 by default', async () => {

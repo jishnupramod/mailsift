@@ -1,7 +1,8 @@
-// Live check: runs connect, folders, search, fetch and close against a real
-// mailbox for each provider named on the command line. It only reads. It
-// prints PASS or FAIL with an error code, counts and folder types, and never
-// prints an address, a password, a subject, a sender or any message text.
+// Live check: runs connect, folders, search (plain and with a required word),
+// fetch and close against a real mailbox for each provider named on the
+// command line. It only reads. It prints PASS or FAIL with an error code,
+// counts and folder types, and never prints an address, a password, a
+// subject, a sender or any message text.
 //
 // Usage: pnpm --filter mailsift test:live <provider> [<provider>...]
 //
@@ -117,11 +118,20 @@ async function check(id) {
     return `${folders.length} folders; ${flags.join(' ') || 'no special-use flags'}`;
   })) && ok;
 
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   let refs = [];
   ok = (await step('search', async () => {
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     refs = await box.search({ fromDomains: ['linkedin.com'], since }, { limit: 5 });
     return `${refs.length} found`;
+  })) && ok;
+
+  // the same search with a required word may find fewer, never more
+  ok = (await step('search with a required word', async () => {
+    const query = { fromDomains: ['linkedin.com'], since };
+    const all = await box.search(query, { limit: 500 });
+    const narrowed = await box.search({ ...query, requireAny: { words: ['job', 'jobs'] } }, { limit: 500 });
+    if (narrowed.length > all.length) throw new Error('more found with the requirement');
+    return `${narrowed.length} ≤ ${all.length}`;
   })) && ok;
 
   if (refs.length > 0) {

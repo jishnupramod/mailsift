@@ -3,6 +3,7 @@ export type {
   Auth,
   ConnectOptions,
   Query,
+  RequireAny,
   Address,
   MessageRef,
   Message,

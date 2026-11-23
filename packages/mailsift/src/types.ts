@@ -19,6 +19,13 @@ export interface ConnectOptions {
   timeoutMs?: number;
 }
 
+export interface RequireAny {
+  /** One of these words or phrases must appear, as a whole word, ignoring case and accents. */
+  words: string[];
+  /** Default ['subject']; 'from' covers name and address. */
+  fields?: ('from' | 'subject')[];
+}
+
 export interface Query {
   /** Match when the sender's address ends with @domain or .domain. */
   fromDomains?: string[];
@@ -26,6 +33,8 @@ export interface Query {
   phrases?: string[];
   /** Default ['from', 'subject']; 'from' covers name and address. */
   phraseFields?: ('from' | 'subject' | 'body')[];
+  /** Also require one of these words; an empty list sets no requirement. */
+  requireAny?: RequireAny;
   /** Never match these sender addresses. */
   excludeFrom?: string[];
   /** Received on or after this day (UTC date). */

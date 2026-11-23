@@ -90,17 +90,25 @@ mailsift is ESM only (`import`, no `require`) and needs Node 22 or later.
 | `fromDomains` | Match when the sender's address ends with `@domain` or `.domain`. |
 | `phrases` | Match when a phrase appears in one of `phraseFields`. |
 | `phraseFields` | Where phrases are looked for: any of `'from'`, `'subject'`, `'body'`. Default `['from', 'subject']`. `'from'` covers the name and the address. |
+| `requireAny` | `{ words, fields }`: also require one of `words` as a whole word or phrase, ignoring case and accents, in one of `fields` (`'from'`, `'subject'`; default `['subject']`). Only the listed forms match: `application` does not match "applications". |
 | `excludeFrom` | Never match these sender addresses. |
 | `since` | Received on or after this day (UTC date). |
 
 A query with no `fromDomains` and no `phrases` matches nothing.
+
+A company named in the subject, and only beside a word about an application or interview:
+
+```js
+const refs = await mailbox.search({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words: ['application', 'interview'] } });
+```
 
 Options: `search(query, { limit })` returns at most `limit` results (default 200), newest first, deduplicated by `key`.
 `fetch(ref, { maxChars })` caps the text at `maxChars` (default 100 000). `connect` takes `timeoutMs` (default 30 000).
 
 On Gmail, the query is compiled to Gmail's own search syntax and sent with `X-GM-RAW`, across All Mail and Spam, leaving
 out Sent and Drafts. On other servers it becomes a standard IMAP `SEARCH`, and domain and exclusion rules are checked
-again in code because IMAP's `FROM` matches substrings. Long queries are split into several searches and the results are
+again in code because IMAP's `FROM` matches substrings. `requireAny` is ANDed onto every search and always checked
+again in code, as whole words. Long queries are split into several searches and the results are
 merged. The person's own Sent and Drafts folders are never searched.
 
 A fetched `Message` has `text` (HTML converted to plain text), `to`, `cc`, attachment metadata (file name, type, size;

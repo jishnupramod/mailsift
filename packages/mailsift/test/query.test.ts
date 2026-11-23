@@ -62,6 +62,43 @@ describe('compileGmail', () => {
   });
 });
 
+describe('compileGmail with requireAny', () => {
+  const words = ['application', 'next steps'];
+
+  it('ands the word group after the main group, before the tail', () => {
+    expect(compileGmail({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words } })).toEqual([
+      '(subject:"Acme") subject:(application OR "next steps") -in:sent -in:drafts',
+    ]);
+  });
+
+  it('looks in the sender and the subject when asked', () => {
+    const [s] = compileGmail({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words, fields: ['from', 'subject'] } });
+    expect(s).toBe(
+      '(subject:"Acme") (from:(application OR "next steps") OR subject:(application OR "next steps")) -in:sent -in:drafts',
+    );
+  });
+
+  it('repeats the group in every piece and keeps each under 1,400 characters', () => {
+    const phrases = Array.from({ length: 150 }, (_, i) => `Company Number ${String(i).padStart(3, '0')} Limited`);
+    const many = Array.from({ length: 20 }, (_, i) => `jobword${i}`);
+    const group = `subject:(${many.join(' OR ')})`;
+    const pieces = compileGmail({ phrases, excludeFrom: ['me@x.example'], since, requireAny: { words: many } });
+    expect(pieces.length).toBeGreaterThan(1);
+    for (const p of pieces) {
+      expect(p.length).toBeLessThan(1400);
+      expect(p).toContain(`) ${group} -from:me@x.example`);
+    }
+    for (const phrase of phrases) {
+      expect(pieces.filter((p) => p.includes(`subject:"${phrase}"`))).toHaveLength(1);
+    }
+  });
+
+  it('compiles like no requirement when every word is empty', () => {
+    const q = { phrases: ['Acme'], since };
+    expect(compileGmail({ ...q, requireAny: { words: ['  ', '""'] } })).toEqual(compileGmail(q));
+  });
+});
+
 describe('compileImap', () => {
   it('builds an or tree plus since', () => {
     expect(compileImap({ fromDomains: ['greenhouse.io'], phrases: ['Acme'], since })).toEqual([
@@ -90,6 +127,46 @@ describe('compileImap', () => {
     for (const p of pieces) expect(JSON.stringify(p).length).toBeLessThan(1400);
     const all = JSON.stringify(pieces);
     for (const phrase of phrases) expect(all.split(`"from":"${phrase}"`)).toHaveLength(2);
+  });
+});
+
+describe('compileImap with requireAny', () => {
+  it('ands one word through a double NOT', () => {
+    expect(
+      compileImap({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words: ['application'] }, since }),
+    ).toEqual([{ subject: 'Acme', since, not: { not: { subject: 'application' } } }]);
+  });
+
+  it('ands an or of words onto a piece that is itself an or', () => {
+    expect(compileImap({ phrases: ['Acme', 'Globex'], requireAny: { words: ['application', 'next steps'] }, since })).toEqual([
+      {
+        or: [{ from: 'Acme' }, { subject: 'Acme' }, { from: 'Globex' }, { subject: 'Globex' }],
+        since,
+        not: { not: { or: [{ subject: 'application' }, { subject: 'next steps' }] } },
+      },
+    ]);
+  });
+
+  it('looks in the sender and the subject when asked', () => {
+    const [s] = compileImap({ phrases: ['Acme'], phraseFields: ['subject'], requireAny: { words: ['offer'], fields: ['from', 'subject'] } });
+    expect(s).toEqual({ subject: 'Acme', not: { not: { or: [{ from: 'offer' }, { subject: 'offer' }] } } });
+  });
+
+  it('repeats the group in every piece and keeps each under 1,400 characters', () => {
+    const phrases = Array.from({ length: 150 }, (_, i) => `Company Number ${i} Limited`);
+    const many = Array.from({ length: 20 }, (_, i) => `jobword${i}`);
+    const group = JSON.stringify({ not: { not: { or: many.map((subject) => ({ subject })) } } }).slice(1, -1);
+    const pieces = compileImap({ phrases, since, requireAny: { words: many } });
+    expect(pieces.length).toBeGreaterThan(1);
+    for (const p of pieces) {
+      expect(JSON.stringify(p).length).toBeLessThan(1400);
+      expect(JSON.stringify(p)).toContain(group);
+    }
+  });
+
+  it('compiles like no requirement when every word is empty', () => {
+    const q = { phrases: ['Acme'], since };
+    expect(compileImap({ ...q, requireAny: { words: ['  ', '""'] } })).toEqual(compileImap(q));
   });
 });
 
@@ -132,5 +209,52 @@ describe('matchesLocally', () => {
   });
   it('rejects a missing sender when domains are required', () => {
     expect(matchesLocally(q, { from: null })).toBe(false);
+  });
+});
+
+describe('matchesLocally with requireAny', () => {
+  const q = { phrases: ['Acme'], phraseFields: ['subject' as const], requireAny: { words: ['application', 'next steps'] } };
+  const ref = (subject: string, name: string | null = null, address = 'jobs@other.example') => ({ from: { name, address }, subject });
+
+  it('needs one of the words in the subject, with no fromDomains', () => {
+    expect(matchesLocally(q, ref('Your application to Acme'))).toBe(true);
+    expect(matchesLocally(q, ref('Acme news'))).toBe(false);
+  });
+  it('matches whole words only, in the listed form', () => {
+    expect(matchesLocally(q, ref('Applications at Acme'))).toBe(false);
+    expect(matchesLocally(q, ref('Reapplication at Acme'))).toBe(false);
+    expect(matchesLocally(q, ref('Acme: application.'))).toBe(true);
+  });
+  it('matches a two-word entry as a phrase', () => {
+    expect(matchesLocally(q, ref('Next steps with Acme'))).toBe(true);
+    expect(matchesLocally(q, ref('Next  Steps with Acme'))).toBe(true);
+    expect(matchesLocally(q, ref('Steps next Acme'))).toBe(false);
+  });
+  it('folds case and accents', () => {
+    const accented = { ...q, requireAny: { words: ['Réunion'] } };
+    expect(matchesLocally(accented, ref('ACME REUNION'))).toBe(true);
+    expect(matchesLocally({ ...q, requireAny: { words: ['reunion'] } }, ref('Acme réunion'))).toBe(true);
+  });
+  it('applies alongside domains, to a domain hit too', () => {
+    const withDomains = { ...q, fromDomains: ['greenhouse.io'] };
+    expect(matchesLocally(withDomains, ref('Hello', null, 'jobs@greenhouse.io'))).toBe(false);
+    expect(matchesLocally(withDomains, ref('Your application', null, 'jobs@greenhouse.io'))).toBe(true);
+  });
+  it('applies when the body is searched', () => {
+    const body = { phrases: ['Acme'], phraseFields: ['body' as const], requireAny: { words: ['offer'] } };
+    expect(matchesLocally(body, ref('An offer'))).toBe(true);
+    expect(matchesLocally(body, ref('Weekly digest'))).toBe(false);
+  });
+  it('looks at the sender name and address only when fields is from', () => {
+    const fromOnly = { ...q, requireAny: { words: ['recruiting'], fields: ['from' as const] } };
+    expect(matchesLocally(fromOnly, ref('Acme recruiting update'))).toBe(false);
+    expect(matchesLocally(fromOnly, ref('Acme update', 'Acme Recruiting'))).toBe(true);
+    expect(matchesLocally(fromOnly, ref('Acme update', null, 'recruiting@acme.example'))).toBe(true);
+  });
+  it('still rejects excluded senders', () => {
+    expect(matchesLocally({ ...q, excludeFrom: ['me@x.example'] }, ref('Your application', null, 'me@x.example'))).toBe(false);
+  });
+  it('sets no requirement when every word is empty', () => {
+    expect(matchesLocally({ ...q, requireAny: { words: ['  ', '""'] } }, ref('Acme news'))).toBe(true);
   });
 });

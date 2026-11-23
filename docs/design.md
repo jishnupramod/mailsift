@@ -120,6 +120,7 @@ interface Query {
   fromDomains?: string[];   // match when the sender's address ends with @domain or .domain
   phrases?: string[];       // match when the phrase appears in one of phraseFields
   phraseFields?: ('from' | 'subject' | 'body')[];   // default ['from', 'subject'] ('from' covers name and address)
+  requireAny?: { words: string[]; fields?: ('from' | 'subject')[] };   // also require one word; fields default ['subject']
   excludeFrom?: string[];   // never match these sender addresses (callers pass the person's own address here)
   since?: Date;             // received on or after this day (UTC date)
 }
@@ -174,6 +175,13 @@ interface MicrosoftTokens { accessToken: string; refreshToken: string; expiresAt
   `excludeFrom` and domain-suffix checks are applied in code after the search, because IMAP's `FROM` matches substrings.
   Large trees are split the same way.
 - **Phrases:** quotes inside a phrase are removed, and empty phrases are dropped.
+- **Required words (`requireAny`):** a message must match the rest of the query and also have one of `words`, as a
+  whole word or phrase, ignoring case and accents, in one of `fields`. Words are cleaned like phrases; a list left
+  empty means no requirement. Gmail ANDs `subject:(application OR "next steps")` (and `from:(…)` when asked) onto
+  every piece, counted toward the 1,400-character limit. Standard IMAP ANDs `NOT NOT <OR group>` onto every piece,
+  because an imapflow search object holds one `or` key and the piece may already use it. The check is always repeated
+  in code, as whole words, whether or not `fromDomains` is given: IMAP's `SUBJECT` matches substrings and Gmail's word
+  rules differ slightly, so the server search alone would let "applications" stand in for "application".
 
 **Errors** are typed with a `code`:
 - `AUTH_FAILED`
