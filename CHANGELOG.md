@@ -6,10 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
 ### Added
 
 - `requireAny` on a query: a search matches only mail that also has one of these words, as a whole word, in the
-  subject or the sender.
+  subject or the sender. A word list longer than 600 characters (joined with ` OR `) throws `TypeError`.
+
+### Tested live
+
+- Gmail: connect, folders, search, a search with a required word, fetch and close pass. The IMAP form of a required
+  word (`NOT NOT`) is checked against the test server only.
 
 ## [0.1.0] - 2026-11-22
 
@@ -29,5 +36,6 @@ All notable changes to this project are documented here. The format is based on
 
 - Gmail: connect, folders, search, fetch and close pass. Other presets are untested.
 
-[Unreleased]: https://github.com/jishnupramod/mailsift/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jishnupramod/mailsift/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jishnupramod/mailsift/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jishnupramod/mailsift/releases/tag/v0.1.0

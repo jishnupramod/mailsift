@@ -22,7 +22,7 @@ mailsift never changes a mailbox.
 | Fastmail (`fastmail`) | imap.fastmail.com | App password | untested |
 | Any IMAP server (`custom`) | your host | App password | untested |
 
-"Untested" means the preset has not yet been tried against a live account. In 0.1.0, Outlook works only if you bring
+"Untested" means the preset has not yet been tried against a live account. For now, Outlook works only if you bring
 your own Microsoft access token: `{ kind: 'microsoft', user, accessToken: async () => token }`.
 
 ## App passwords
